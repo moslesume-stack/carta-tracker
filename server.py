@@ -9,64 +9,71 @@ app = Flask(__name__)
 WEBHOOK = os.environ["DISCORD_WEBHOOK"]
 
 
+def get_device():
+    ua = request.user_agent.string.lower()
+
+    if "iphone" in ua:
+        return "IPHONE", "iPhone"
+
+    if "ipad" in ua:
+        return "IPAD", "iPad"
+
+    if "android" in ua:
+        device = "ANDROID"
+
+        if "samsung" in ua:
+            brand = "Samsung"
+        elif "xiaomi" in ua:
+            brand = "Xiaomi"
+        elif "huawei" in ua:
+            brand = "Huawei"
+        elif "oppo" in ua:
+            brand = "OPPO"
+        elif "oneplus" in ua:
+            brand = "OnePlus"
+        elif "google" in ua or "pixel" in ua:
+            brand = "Google Pixel"
+        elif "motorola" in ua:
+            brand = "Motorola"
+        elif "realme" in ua:
+            brand = "Realme"
+        elif "vivo" in ua:
+            brand = "vivo"
+        else:
+            brand = "Android"
+
+        return device, brand
+
+    if "windows" in ua:
+        return "WINDOWS PC", "Desktop"
+
+    if "macintosh" in ua:
+        return "MAC", "Mac"
+
+    if "linux" in ua:
+        return "LINUX PC", "Desktop"
+
+    return "UNKNOWN", "Unknown"
+
+
 @app.route("/opened")
 def opened():
-    ip = request.remote_addr or "Desconocida"
-    user_agent = request.user_agent.string or "Desconocido"
+    device, model = get_device()
 
-    # Obtener ubicación aproximada mediante la IP
-    location = {}
-
-    try:
-        response = requests.get(
-            f"https://ipapi.co/{ip}/json/",
-            timeout=5
-        )
-
-        if response.ok:
-            location = response.json()
-
-    except requests.RequestException:
-        pass
-
-    city = location.get("city", "Desconocida")
-    region = location.get("region", "Desconocida")
-    country = location.get("country_name", "Desconocido")
-    postal = location.get("postal", "Desconocido")
-    latitude = location.get("latitude")
-    longitude = location.get("longitude")
-    org = location.get("org", "Desconocida")
-    timezone = location.get("timezone", "Desconocida")
-
-    hora = datetime.now(
+    time = datetime.now(
         ZoneInfo("America/Bogota")
-    ).strftime("%d/%m/%Y %I:%M:%S %p")
-
-    mapa = "No disponible"
-
-    if latitude is not None and longitude is not None:
-        mapa = f"https://www.google.com/maps?q={latitude},{longitude}"
+    ).strftime("%H:%M:%S")
 
     message = (
-        "💌 **Alguien ha abierto la carta**\n\n"
-
-        "📍 **Ubicación aproximada**\n"
-        f"🏙️ Ciudad: `{city}`\n"
-        f"🗺️ Región: `{region}`\n"
-        f"🌎 País: `{country}`\n"
-        f"📮 Código postal: `{postal}`\n"
-        f"📌 Coordenadas aproximadas: `{latitude}, {longitude}`\n"
-        f"🗺️ Mapa: {mapa}\n\n"
-
-        "🌐 **Conexión**\n"
-        f"IP: `{ip}`\n"
-        f"🏢 Organización/ISP: `{org}`\n"
-        f"🕐 Zona horaria: `{timezone}`\n\n"
-
-        "📱 **Navegador / dispositivo**\n"
-        f"`{user_agent}`\n\n"
-
-        f"⏰ **Hora:** `{hora}`"
+        "```text\n"
+        "╔══════════════════════════╗\n"
+        "       ⚡ LETTER ACCESS\n"
+        "╚══════════════════════════╝\n\n"
+        f"[+] STATUS  : OPENED\n"
+        f"[+] DEVICE  : {device}\n"
+        f"[+] MODEL   : {model}\n"
+        f"[+] TIME    : {time}\n"
+        "```"
     )
 
     try:
